@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<os:object-store name="Spotify_Object_Store" doc:name="Object store" doc:id="76c2439c-93d2-494b-8a36-7148fb7f3823" entryTtl="1" entryTtlUnit="HOURS" />
+	<http:request-config name="Spotify_HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="ed63bfcd-e80e-4079-9599-d3419129c076" >
+		<http:request-connection protocol="HTTPS" host="accounts.spotify.com" />
+	</http:request-config>
+	<sub-flow name="getSpotifyAuthenticationToken" doc:id="9e9d2157-c9e5-49d6-8b82-f19de040ff4f" >
+		<os:contains doc:name="spotifyAccessToken" doc:id="f39643ba-5841-4168-95ef-8d89c6697f90" key="spotifyAccessToken" objectStore="Spotify_Object_Store" target="keyPresent"/>
+		<choice doc:name="Choice" doc:id="8ffe47c9-7b90-4978-a62b-45366d359509" >
+			<when expression="#[vars.keyPresent]">
+				<logger level="INFO" doc:name="Found" doc:id="23fafe08-03d8-482a-bcf6-e49e0ed814fd" message="Found key. Recovering"/>
+				<os:retrieve doc:name="spotifyAccessToken" doc:id="09cc907a-de40-42f9-9e0f-100bee342417" key="spotifyAccessToken" objectStore="Spotify_Object_Store" target="spotifyToken"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Missing" doc:id="3947568a-a873-4f60-98b8-fa7f141427ac" message="The key is missing. Requesting a new one"/>
+				<flow-ref doc:name="Request Spotify Token" doc:id="45fc7744-10bf-4b4a-9b2d-29c60799758f" name="requestNewSpotifyToken" target="spotifyToken"/>
+				<os:store doc:name="spotifyAccessToken" doc:id="7ead67ae-bd55-428a-b064-a6c02f3d5b91" key="spotifyAccessToken" objectStore="Spotify_Object_Store">
+					<os:value ><![CDATA[#[vars.spotifyToken]]]></os:value>
+				</os:store>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<flow name="requestNewSpotifyToken" doc:id="79f13fd1-7ee4-4081-b3fe-d852cd5bb9c3" >
+		<ee:transform doc:name="Request Body" doc:id="9709041d-e177-4308-aaa1-4d34eecfa5de" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="requestBody" ><![CDATA[%dw 2.0
+output application/x-www-form-urlencoded
+---
+{
+	grant_type: "client_credentials"
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Request Headers" doc:id="c8b2c003-a7fe-4e0d-b736-5bc3bdb56684" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="requestHeaders" ><![CDATA[%dw 2.0
+output application/java
+import * from dw::core::Binaries
+
+var clientId = p("spotify.client_id")
+var clientSecret = p("spotify.client_secret")
+var key = toBase64((clientId ++ ":" ++ clientSecret) as Binary)
+---
+{
+	Authorization: "Basic " ++ key
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request" doc:id="b1152564-9144-4f0e-a393-baf5caae71d3" config-ref="Spotify_HTTP_Request_configuration" path="/api/token">
+			<http:body ><![CDATA[#[vars.requestBody]]]></http:body>
+			<http:headers ><![CDATA[#[vars.requestHeaders]]]></http:headers>
+		</http:request>
+		<set-payload value="#[payload.access_token]" doc:name="Set Payload" doc:id="d1d190a7-6b95-4d2b-9c5d-e8ad73946530" />
+	</flow>
+</mule>

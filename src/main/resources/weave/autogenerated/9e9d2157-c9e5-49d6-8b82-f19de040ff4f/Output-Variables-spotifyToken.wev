@@ -1,0 +1,5 @@
+%dw 2.0
+
+type auto_9e9d2157_c9e5_49d6_8b82_f19de040ff4f_Output_Variables_spotifyToken = {|  |} {"typeAlias": "Serializable",
+"typeId": "java.io.Serializable"}
+

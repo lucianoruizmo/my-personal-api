@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<sub-flow name="getSpotify" doc:id="1747bbeb-b94b-4255-b7d4-8051625b98da" >
+		<flow-ref doc:name="Get Spotify Token" doc:id="1b9eb0d3-0864-44b5-a739-8af07d8b94ba" name="getSpotifyAuthenticationToken"/>
+		<set-payload value="#[vars.spotifyToken]" doc:name="Set Payload" doc:id="35e5054c-b4c0-4864-985b-ac9520cab30e" />
+	</sub-flow>
+</mule>
