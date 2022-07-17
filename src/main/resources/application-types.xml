@@ -286,4 +286,5 @@ type: boolean]]></types:shape>
       </types:output-event>
     </types:processor-declaration>
   </types:enrichment>
+  <types:enrichment select="#6b6cfefb-370a-4984-a419-a8888c1a6c4c"/>
 </types:mule>

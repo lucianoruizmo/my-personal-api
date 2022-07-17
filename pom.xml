@@ -47,13 +47,6 @@
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
-			<groupId>98934f28-c864-4939-92ec-e571a683b6d2</groupId>
-			<artifactId>my-personal-api</artifactId>
-			<version>0.0.1</version>
-			<classifier>raml</classifier>
-			<type>zip</type>
-		</dependency>
-		<dependency>
 			<groupId>org.mule.modules</groupId>
 			<artifactId>mule-apikit-module</artifactId>
 			<version>1.5.11</version>
@@ -64,6 +57,13 @@
 			<artifactId>mule-objectstore-connector</artifactId>
 			<version>1.2.1</version>
 			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>98934f28-c864-4939-92ec-e571a683b6d2</groupId>
+			<artifactId>my-personal-api</artifactId>
+			<version>0.0.2</version>
+			<classifier>raml</classifier>
+			<type>zip</type>
 		</dependency>
 	</dependencies>
 

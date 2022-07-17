@@ -1,11 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
 	<sub-flow name="getSpotify" doc:id="1747bbeb-b94b-4255-b7d4-8051625b98da" >
-		<flow-ref doc:name="Get Spotify Token" doc:id="1b9eb0d3-0864-44b5-a739-8af07d8b94ba" name="getSpotifyAuthenticationToken"/>
-		<set-payload value="#[vars.spotifyToken]" doc:name="Set Payload" doc:id="35e5054c-b4c0-4864-985b-ac9520cab30e" />
+		<flow-ref doc:name="Get Spotify Token" doc:id="1b9eb0d3-0864-44b5-a739-8af07d8b94ba" name="getSpotifyAuthenticationToken" />
+		<ee:transform doc:name="Build Query Params" doc:id="6b6cfefb-370a-4984-a419-a8888c1a6c4c" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+output application/java
+
+var artist = ("artist:" ++ attributes.queryParams.artist) default ""
+var album = ("album:" ++ attributes.queryParams.album) default ""
+var track = ("track:" ++ attributes.queryParams.track) default ""
+---
+[
+	(artist) if (!isEmpty(artist)),
+	(album) if (!isEmpty(album)),
+	(track) if (!isEmpty(track))
+] joinBy ("+")]]></ee:set-variable>
+				<ee:set-variable variableName="types" ><![CDATA[%dw 2.0
+output application/java
+---
+[
+	("artist") if (!isEmpty(attributes.queryParams.artist)),
+	("album") if (!isEmpty(attributes.queryParams.album)),
+	("track") if (!isEmpty(attributes.queryParams.track))
+] joinBy (",")]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<try doc:name="Try" doc:id="9c7ba1d2-7930-40fc-b6fa-bba02df12579" >
+			<http:request method="GET" doc:name="Spotify Search" doc:id="366e92ee-5476-4d3f-abc0-1811262bf48e" config-ref="Spotify_HTTP_Request_configuration" path="/search">
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	q: vars.query,
+	"type": vars.types
+}]]]></http:query-params>
+		</http:request>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4b042866-b765-46da-88f6-8c2fe922f424" >
+					<raise-error doc:name="SPOTIFY:ERROR" doc:id="065aa554-96f1-4fd0-8d87-d5972a7723cd" type="SPOTIFY:ERROR"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Set Payload" doc:id="88113a45-1d84-4d5f-addb-bf9f05f7b1d0">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+import spotify::SpotifySearch
+---
+SpotifySearch::returnSpotifySearchData(payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
 	</sub-flow>
 </mule>
