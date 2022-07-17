@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
     <http:listener-config name="my-personal-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
-    <apikit:config name="my-personal-api-config" api="resource::98934f28-c864-4939-92ec-e571a683b6d2:my-personal-api:0.0.1:raml:zip:my-personal-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="my-personal-api-config" api="resource::98934f28-c864-4939-92ec-e571a683b6d2:my-personal-api:0.0.2:raml:zip:my-personal-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <configuration-properties doc:name="Configuration properties" doc:id="dafaa437-fb38-497d-ae7e-18877f828c46" file="properties.yaml" />
-	<flow name="my-personal-api-main">
+    <flow name="my-personal-api-main">
         <http:listener config-ref="my-personal-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
                 <http:headers>#[vars.outboundHeaders default {}]</http:headers>
@@ -95,6 +95,38 @@ output application/json
                     </ee:variables>
                 </ee:transform>
             </on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1d851469-d9bc-4be4-8b0d-1be3577802ee" type="SPOTIFY:ACCESS_TOKEN">
+				<ee:transform doc:name="Transform Message" doc:id="5128f0d1-22c7-412e-98c5-3c05c468bc7c" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	code: 500,
+	message: "An error ocurred authenticating to the Spotify service"
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="064de982-1a32-4276-912a-8743b1405dde" type="SPOTIFY:ERROR">
+				<ee:transform doc:name="Transform Message" doc:id="f2bc6562-6531-4238-bf09-0c93abed9578" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	code: 500,
+	message: "An error ocurred using the Spotify Service"
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
         </error-handler>
     </flow>
     <flow name="my-personal-api-console">
@@ -124,10 +156,7 @@ output application/json
             </on-error-propagate>
         </error-handler>
     </flow>
-    <flow name="get:\spotify\me:my-personal-api-config">
-        <logger level="INFO" message="get:\spotify\me:my-personal-api-config" />
-    </flow>
-    <flow name="get:\spotify:my-personal-api-config">
-		<flow-ref doc:name="GET Spotify" doc:id="84ac60a3-90b4-4916-9e97-6dbf76a733fa" name="getSpotify"/>
+    <flow name="get:\spotify\search:my-personal-api-config">
+		<flow-ref doc:name="GET Spotify" doc:id="84ac60a3-90b4-4916-9e97-6dbf76a733fa" name="getSpotify" />
     </flow>
 </mule>
